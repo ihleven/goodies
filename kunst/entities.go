@@ -20,7 +20,7 @@ const (
 
 func (p Schaffensphase) IsValid() bool {
 	switch p {
-	case Früh, Natur1, Natur2, Entgegenständlichung, Monochrom:
+	case Früh, Natur1, Natur2, Entgegenständlichung, Monochrom, Farbfeld:
 		return true
 	}
 	return false
