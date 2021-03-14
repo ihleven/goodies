@@ -15,6 +15,7 @@ const (
 	Natur2                              = "Natur II Abstraktion"
 	Entgegenständlichung                = "Entgegenständlichung"
 	Monochrom                           = "Monochrome Malerei"
+	Farbfeld                            = "Farbfeldmalerei"
 )
 
 func (p Schaffensphase) IsValid() bool {
