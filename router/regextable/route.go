@@ -22,9 +22,7 @@ func NewRouter() *router {
 			code = 500
 		}
 		w.WriteHeader(code)
-		fmt.Fprintf(w, " -> %#v", err)
-		fmt.Printf(" -> %#v\n", err)
-
+		fmt.Fprintf(w, "%+v", err)
 	}
 
 	return &router{

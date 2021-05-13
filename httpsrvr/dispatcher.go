@@ -1,6 +1,7 @@
 package httpsrvr
 
 import (
+	"fmt"
 	"net/http"
 	"path"
 	"strings"
@@ -10,7 +11,7 @@ func NewDispatcher(handler http.Handler, name string) *dispatcher {
 	if handler == nil {
 		handler = http.NotFoundHandler()
 	}
-	return &dispatcher{name: name, handler: handler, children: make(map[string]*dispatcher)}
+	return &dispatcher{name: name, handler: handler, children: make(map[string]*dispatcher), param: make(map[string]*dispatcher), params: make(map[string]string)}
 }
 
 type dispatcher struct {
@@ -18,6 +19,8 @@ type dispatcher struct {
 	handler  http.Handler
 	children map[string]*dispatcher
 	preserve bool
+	params   map[string]string
+	param    map[string]*dispatcher
 }
 
 func (r *dispatcher) PreservePath(preserve bool) *dispatcher {
@@ -42,6 +45,12 @@ func (r *dispatcher) Register(path string, handler http.Handler) *dispatcher {
 		r.handler = handler
 		return r
 	case tail == "/":
+		if strings.HasPrefix(head, ":") {
+			fmt.Println(head[1:])
+			// r.param = head[:1]
+			r.param[head[1:]] = NewDispatcher(handler, path[1:])
+			return r.param[head[1:]]
+		}
 		// child route
 		r.children[head] = NewDispatcher(handler, path[1:]) // {children: make(map[string]*dispatcher), handler: handler}
 		return r.children[head]
@@ -66,6 +75,14 @@ func (d *dispatcher) GetDispatcher(route string) (*dispatcher, string) {
 	if disp, ok := d.children[head]; ok {
 		return disp.GetDispatcher(tail)
 	}
+
+	for k, disp := range d.param {
+		d, route := disp.GetDispatcher(tail)
+		d.params[k] = head
+		fmt.Println(k, d, route)
+		return d, route
+	}
+
 	return d, route
 }
 

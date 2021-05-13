@@ -18,7 +18,7 @@ import (
 // only available on linux, see systemd.go
 var listenAndServeSystemD func(*http.Server) error
 
-func NewServer(port int, debug bool) *httpServer {
+func NewServer(host string, port int, debug bool) *httpServer {
 
 	start := time.Now()
 
@@ -26,14 +26,14 @@ func NewServer(port int, debug bool) *httpServer {
 	if debug {
 		loglevel = log.DEBUG
 	}
-	host := ""
+
 	return &httpServer{
 		addr:   fmt.Sprintf("%s:%d", host, port),
 		routes: NewDispatcher(nil, "root"),
 		// systemd:   systemd,
 		debug:     debug,
 		log:       log.NewStdoutLogger(loglevel),
-		logger:    log.AccessLogger{"CombineLoggerType"}, // log.NewStdoutLogger(loglevel),
+		logger:    log.AccessLogger{Format: "CombineLoggerType"}, // log.NewStdoutLogger(loglevel),
 		startedAt: start,
 		instance:  start.Format("20060102T150405"),
 	}
@@ -187,11 +187,12 @@ func (s *httpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			color.Red(" error request %d: %s %s => %d (%d bytes, %v)\n", reqnum, reqid, r.URL.Path, rw.statusCode, rw.Count(), time.Since(start))
 		}
 
-		s.logger.Access(reqnum, reqid, start, r.RemoteAddr, "user", r.Method, r.URL.Path, r.Proto, rw.statusCode, int(rw.Count()), time.Since(start), r.Referer(), name)
+		// s.logger.Access(reqnum, reqid, start, r.RemoteAddr, "user", r.Method, r.URL.Path, r.Proto, rw.statusCode, int(rw.Count()), time.Since(start), r.Referer(), name)
 		color.Green("request %d: %s %s => %d (%d bytes, %v)\n", reqnum, reqid, r.URL.Path, rw.statusCode, rw.Count(), time.Since(start))
 	}(start, reqnum, reqid, dispatcher.name)
 
-	dispatcher.handler.ServeHTTP(rw, r)
+	ctx = context.WithValue(ctx, "params", dispatcher.params)
+	dispatcher.handler.ServeHTTP(rw, r.WithContext(ctx))
 }
 
 func (s *httpServer) Dispatch(route string) (*dispatcher, string) {
